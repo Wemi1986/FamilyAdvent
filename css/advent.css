@@ -41,7 +41,7 @@ body {
 
 /* Vorderseite (Front) */
 .front {
-  background-image: url("img/t.png");
+  background-image: url('../img/t.png');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
