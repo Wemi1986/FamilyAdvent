@@ -1,0 +1,104 @@
+/* Globales Styling */
+body {
+  margin: 0;
+  background: linear-gradient(to bottom left, #e3a427, white);
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.advent-calendar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+  padding: 20px;
+  max-width: 1200px; /* Begrenzt die Breite für ein 4x6 Raster */
+}
+
+/* Türchen */
+.door {
+  width: 200px;
+  height: 200px;
+  perspective: 1000px;
+  cursor: pointer;
+  position: relative;
+}
+
+.door div {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  backface-visibility: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  transition: transform 0.6s ease;
+}
+
+/* Vorderseite (Front) */
+.front {
+  background-image: url('/img/t.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  font-size: 50px;
+  color: white;
+  font-family: 'Harrington', serif;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+/* Rückseite (Back) */
+.back {
+  background-color: transparent;
+  transform: rotateY(180deg);
+  border-radius: 10px;
+}
+
+/* Türchen drehen */
+.door.flipped .front {
+  transform: rotateY(-180deg);
+}
+
+.door.flipped .back {
+  transform: rotateY(0deg);
+  z-index: 3;
+}
+
+/* Video */
+.video-content {
+  width: 90%; /* Passt das Video an die Türgröße an */
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Hover-Effekt */
+.door:hover {
+  transform: scale(1.05);
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .door {
+    width: 150px;
+    height: 150px;
+  }
+  .front, .back {
+    font-size: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .door {
+    width: 120px;
+    height: 120px;
+  }
+  .front, .back {
+    font-size: 30px;
+  }
+}

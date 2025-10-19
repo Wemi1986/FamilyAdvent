@@ -1,0 +1,72 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #7dbb91; /* Weihnachtsgrün */
+  color: #ffffff;
+  text-align: center;
+  padding-top: 100px;
+  background-size: cover; /* Sorgt dafür, dass der Hintergrund die gesamte Seite bedeckt */
+  background-position: center; /* Zentriert das Hintergrundbild */
+}
+
+.container {
+  background-color: #d54d7b; /* Weihnachtsrot */
+  width: 300px;
+  margin: 0 auto;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+h1 {
+  color: #fff;
+}
+
+input[type="password"] {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 5px;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 20px;
+  background-color: #f4f4f4;
+  color: #333;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #e2e2e2;
+}
+
+/* Container flex Anpassungen */
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Formular Anpassungen */
+form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Inputfeld Anpassungen */
+input[type="password"] {
+  width: 80%; /* Anpassung der Breite */
+  max-width: 500px; /* Maximale Breite festlegen */
+}
+
+/* Button Anpassungen */
+button {
+  width: 80%;
+  max-width: 500px; /* Damit der Button die gleiche Breite wie das Eingabefeld hat */
+}
