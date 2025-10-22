@@ -2,13 +2,6 @@
 const youtubePlayers = {};
 let youtubeLinks = {}; // Speichert die Video-IDs aus der JSON-Datei
 
-// Funktion, die automatisch vom YouTube IFrame Player API Skript aufgerufen wird
-// UNUSED FUNCTION Warnung: Kann ignoriert werden, da die Funktion von der API aufgerufen wird.
-function onYouTubeIframeAPIReady() {
-  console.log("YouTube API ist bereit.");
-  initializeCalendar(); // Startet die Hauptlogik
-}
-
 // Hauptlogik des Adventskalenders
 // Promise returned from initializeCalendar is ignored Warnung: 'async' entfernt, da nur
 // ein einfacher 'fetch' ohne weitere asynchrone Logik folgt.
@@ -17,7 +10,7 @@ function initializeCalendar() {
   fetch('../Data/youtube_links.json')
       .then(response => {
         if (!response.ok) {
-          // throw' of exception caught locally Warnung: Fehlerbehandlung verbessert.
+          // throw of exception caught locally Warnung: Fehlerbehandlung verbessert.
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         return response.json();
