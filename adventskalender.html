@@ -9,6 +9,13 @@
 </head>
 
 <body>
+<script>
+  // Prüfen, ob der Nutzer eingeloggt ist
+  if (localStorage.getItem('adventAuthorized') !== 'true') {
+    // Wenn nicht, sofort zurück zur Startseite
+    window.location.href = 'index.html';
+  }
+</script>
 
 <div class="advent-calendar">
   <div class="door" id="door1" data-day="1">
