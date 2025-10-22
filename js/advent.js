@@ -165,4 +165,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof YT !== 'undefined' && YT.Player) {
     initializeCalendar();
   }
+
 });
+
+function onYouTubeIframeAPIReady() {
+  initializeCalendar();
+}
