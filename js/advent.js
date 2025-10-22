@@ -7,7 +7,7 @@ let youtubeLinks = {}; // Speichert die Video-IDs aus der JSON-Datei
 // ein einfacher 'fetch' ohne weitere asynchrone Logik folgt.
 function initializeCalendar() {
   // 1. YouTube Links aus JSON laden
-  fetch('../Data/youtube_links.json')
+  fetch('./Data/youtube_links.json')
       .then(response => {
         if (!response.ok) {
           // throw of exception caught locally Warnung: Fehlerbehandlung verbessert.
