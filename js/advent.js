@@ -150,6 +150,7 @@ function checkPassword() {
   const correctPassword = 'Grosi'; // Tippfehler 'Grosi' (wenn es im Code 'Grosi' war)
 
   if (passwordInput === correctPassword) {
+    localStorage.setItem('adventAuthorized', 'true');
     window.location.href = 'adventskalender.html';
     return false;
   } else {
