@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebERP – Weberei</title>
+<style>
+  :root {
+    --bg: #f4f5f7; --panel: #fff; --text: #1f2933; --muted: #6b7785; --line: #dde1e6;
+    --brand: #1f5f8b; --brand-2: #e8f1f8; --ok: #2e7d32; --warn: #b26a00; --bad: #c62828;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
+  header { background: var(--brand); color: #fff; padding: 10px 16px; display: flex; align-items: center; gap: 12px; }
+  header h1 { font-size: 17px; margin: 0; font-weight: 600; }
+  header small { opacity: .75; }
+  header .sp { flex: 1; }
+  header button { background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.3); }
+  .layout { display: flex; min-height: calc(100vh - 46px); }
+  nav { width: 200px; background: var(--panel); border-right: 1px solid var(--line); padding: 8px 0; flex-shrink: 0; }
+  nav a { display: block; padding: 8px 16px; color: var(--text); text-decoration: none; cursor: pointer; border-left: 3px solid transparent; }
+  nav a:hover { background: var(--brand-2); }
+  nav a.active { border-left-color: var(--brand); background: var(--brand-2); font-weight: 600; }
+  nav .grp { padding: 12px 16px 4px; font-size: 11px; text-transform: uppercase; color: var(--muted); letter-spacing: .05em; }
+  main { flex: 1; padding: 16px 20px; min-width: 0; }
+  h2 { margin: 0 0 12px; font-size: 19px; }
+  .toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+  .toolbar input[type=search] { min-width: 220px; }
+  button { font: inherit; padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
+  button.primary { background: var(--brand); color: #fff; border-color: var(--brand); }
+  button.small { padding: 2px 8px; font-size: 12px; }
+  button.danger { color: var(--bad); }
+  button:disabled { opacity: .4; cursor: default; }
+  input, select, textarea { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 4px; background: #fff; color: var(--text); width: 100%; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px; margin-bottom: 14px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 14px; }
+  .kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; }
+  .kpi .v { font-size: 24px; font-weight: 600; }
+  .kpi .l { color: var(--muted); font-size: 12px; }
+  .tablewrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { background: #fafbfc; font-size: 12px; color: var(--muted); font-weight: 600; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr:last-child td { border-bottom: 0; }
+  .badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; background: #eceff1; }
+  .b-ok { background: #e3f2e5; color: var(--ok); } .b-warn { background: #fff3e0; color: var(--warn); }
+  .b-bad { background: #fdecea; color: var(--bad); } .b-info { background: var(--brand-2); color: var(--brand); }
+  .bar { height: 8px; background: #eceff1; border-radius: 4px; overflow: hidden; min-width: 80px; }
+  .bar > div { height: 100%; background: var(--brand); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  dialog { border: 0; border-radius: 8px; padding: 0; width: min(560px, 94vw); box-shadow: 0 10px 40px rgba(0,0,0,.25); }
+  dialog::backdrop { background: rgba(0,0,0,.35); }
+  dialog form { padding: 18px; }
+  dialog h3 { margin: 0 0 12px; }
+  .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+  .fields label { font-size: 12px; color: var(--muted); display: flex; flex-direction: column; gap: 3px; }
+  .fields label.full { grid-column: 1 / -1; }
+  .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+  .muted { color: var(--muted); }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  #toast { position: fixed; bottom: 16px; right: 16px; background: #263238; color: #fff; padding: 10px 14px; border-radius: 6px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  #toast.show { opacity: 1; }
+  .invoice { max-width: 760px; background: #fff; padding: 32px; border: 1px solid var(--line); }
+  .invoice table td, .invoice table th { white-space: normal; }
+  @media (max-width: 760px) {
+    .layout { flex-direction: column; } nav { width: auto; display: flex; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+    nav .grp { display: none; } nav a { white-space: nowrap; border-left: 0; border-bottom: 3px solid transparent; }
+    nav a.active { border-bottom-color: var(--brand); } .grid2, .fields { grid-template-columns: 1fr; } main { padding: 12px; }
+  }
+  @media print { header, nav, .toolbar, .noprint { display: none !important; } main { padding: 0; } .invoice { border: 0; } body { background: #fff; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>WebERP</h1><small>Mini-ERP für die Weberei</small>
+  <span class="sp"></span>
+  <button id="btnExport" title="Daten als JSON sichern">Export</button>
+  <button id="btnImport" title="Daten aus JSON laden">Import</button>
+  <button id="btnReset" title="Demodaten wiederherstellen">Reset</button>
+  <input type="file" id="importFile" accept="application/json" hidden>
+</header>
+<div class="layout">
+  <nav id="nav"></nav>
+  <main id="main"></main>
+</div>
+<dialog id="dlg"><form method="dialog" id="dlgForm"></form></dialog>
+<div id="toast"></div>
+
+<script>
+'use strict';
+/* ================================================================
+   Datenhaltung
+   ================================================================ */
+const KEY = 'weberei-erp-v1';
+const MWST = 0.19;
+const today = () => new Date().toISOString().slice(0, 10);
+const addDays = (d) => { const x = new Date(); x.setDate(x.getDate() + d); return x.toISOString().slice(0, 10); };
+
+function demoData() {
+  return {
+    seq: { KD: 1004, GA: 2006, AR: 3004, WM: 4005, AU: 5003, RE: 6000, BW: 7000 },
+    kunden: [
+      { id: 'KD1001', name: 'Modehaus Berger GmbH', ort: 'München', email: 'einkauf@berger-mode.de', zahlziel: 30 },
+      { id: 'KD1002', name: 'Heimtex Schulz KG', ort: 'Bielefeld', email: 'info@heimtex-schulz.de', zahlziel: 14 },
+      { id: 'KD1003', name: 'Polster & Co.', ort: 'Coburg', email: 'bestellung@polster-co.de', zahlziel: 30 },
+    ],
+    garne: [
+      { id: 'GA2001', name: 'Baumwolle gekämmt', material: 'CO 100%', nm: 50, farbe: 'Rohweiß', bestand: 820, min: 200, preis: 6.40 },
+      { id: 'GA2002', name: 'Baumwolle gefärbt', material: 'CO 100%', nm: 50, farbe: 'Marine', bestand: 310, min: 150, preis: 8.10 },
+      { id: 'GA2003', name: 'Leinen', material: 'LI 100%', nm: 26, farbe: 'Natur', bestand: 140, min: 120, preis: 14.50 },
+      { id: 'GA2004', name: 'Polyester Filament', material: 'PES', nm: 60, farbe: 'Schwarz', bestand: 450, min: 100, preis: 4.20 },
+      { id: 'GA2005', name: 'Schurwolle', material: 'WO 100%', nm: 32, farbe: 'Anthrazit', bestand: 90, min: 100, preis: 18.90 },
+    ],
+    artikel: [
+      { id: 'AR3001', name: 'Hemdenpopeline', bindung: 'Leinwand', breite: 150, schussDichte: 36, kettGarn: 'GA2001', kettBedarf: 0.062, schussGarn: 'GA2001', schussBedarf: 0.055, preis: 7.80, lager: 120 },
+      { id: 'AR3002', name: 'Denim Marine', bindung: 'Köper 3/1', breite: 160, schussDichte: 24, kettGarn: 'GA2002', kettBedarf: 0.21, schussGarn: 'GA2001', schussBedarf: 0.17, preis: 11.50, lager: 0 },
+      { id: 'AR3003', name: 'Halbleinen Tischwäsche', bindung: 'Leinwand', breite: 180, schussDichte: 18, kettGarn: 'GA2001', kettBedarf: 0.09, schussGarn: 'GA2003', schussBedarf: 0.12, preis: 13.90, lager: 45 },
+      { id: 'AR3004', name: 'Bezugsstoff Wollmix', bindung: 'Atlas 5-bindig', breite: 140, schussDichte: 22, kettGarn: 'GA2004', kettBedarf: 0.11, schussGarn: 'GA2005', schussBedarf: 0.19, preis: 24.00, lager: 0 },
+    ],
+    maschinen: [
+      { id: 'WM4001', name: 'Dornier P1', typ: 'Greifer', drehzahl: 550, nutzgrad: 85, status: 'Bereit' },
+      { id: 'WM4002', name: 'Dornier P2', typ: 'Greifer', drehzahl: 550, nutzgrad: 85, status: 'Bereit' },
+      { id: 'WM4003', name: 'Picanol Omni', typ: 'Luftdüse', drehzahl: 900, nutzgrad: 88, status: 'Bereit' },
+      { id: 'WM4004', name: 'Sulzer Projektil', typ: 'Projektil', drehzahl: 380, nutzgrad: 80, status: 'Wartung' },
+      { id: 'WM4005', name: 'Jacquard J1', typ: 'Greifer', drehzahl: 450, nutzgrad: 78, status: 'Bereit' },
+    ],
+    auftraege: [
+      { id: 'AU5001', kunde: 'KD1001', artikel: 'AR3001', meter: 600, termin: addDays(10), status: 'Offen', maschine: '', produziert: 0, datum: today() },
+      { id: 'AU5002', kunde: 'KD1002', artikel: 'AR3003', meter: 400, termin: addDays(18), status: 'Offen', maschine: '', produziert: 0, datum: today() },
+      { id: 'AU5003', kunde: 'KD1003', artikel: 'AR3004', meter: 250, termin: addDays(25), status: 'Offen', maschine: '', produziert: 0, datum: today() },
+    ],
+    rechnungen: [],
+    bewegungen: [],
+  };
+}
+
+let db;
+function load() {
+  try { db = JSON.parse(localStorage.getItem(KEY)); } catch (e) { db = null; }
+  if (!db || !db.seq) db = demoData();
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) { /* z.B. privater Modus */ } }
+function nextId(prefix) { db.seq[prefix] = (db.seq[prefix] || 0) + 1; return prefix + db.seq[prefix]; }
+const byId = (list, id) => db[list].find(x => x.id === id);
+
+/* ================================================================
+   Hilfsfunktionen
+   ================================================================ */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = (n, d = 0) => Number(n || 0).toLocaleString('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d });
+const eur = n => Number(n || 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+const fdate = d => d ? new Date(d + 'T00:00').toLocaleDateString('de-DE') : '';
+function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2600); }
+
+function buchen(art, ref, menge, einheit, text) {
+  db.bewegungen.unshift({ id: nextId('BW'), datum: new Date().toISOString().slice(0, 16).replace('T', ' '), art, ref, menge, einheit, text });
+}
+
+/* Garnbedarf eines Auftrags (kg) je Garn */
+function garnbedarf(artikelId, meter) {
+  const a = byId('artikel', artikelId); if (!a) return {};
+  const r = {};
+  r[a.kettGarn] = (r[a.kettGarn] || 0) + a.kettBedarf * meter;
+  r[a.schussGarn] = (r[a.schussGarn] || 0) + a.schussBedarf * meter;
+  return r;
+}
+function garnVerfuegbar(bedarf) { return Object.entries(bedarf).every(([g, kg]) => (byId('garne', g)?.bestand || 0) >= kg); }
+
+/* Leistung einer Maschine für einen Artikel in m/h:
+   Schuss/min * 60 / (Schuss/cm * 100) * Nutzeffekt */
+function leistung(maschine, artikel) {
+  if (!maschine || !artikel || !artikel.schussDichte) return 0;
+  return maschine.drehzahl * 60 / (artikel.schussDichte * 100) * (maschine.nutzgrad / 100);
+}
+
+const STATUS_CLS = { 'Offen': 'b-info', 'In Produktion': 'b-warn', 'Fertig': 'b-ok', 'Geliefert': 'b-ok', 'Fakturiert': '', 'Bereit': 'b-ok', 'Läuft': 'b-warn', 'Wartung': 'b-bad', 'Störung': 'b-bad', 'Offen ': 'b-warn', 'Bezahlt': 'b-ok' };
+const badge = s => `<span class="badge ${STATUS_CLS[s] || ''}">${esc(s)}</span>`;
+
+/* ================================================================
+   Generischer Dialog
+   ================================================================ */
+function openForm(title, fields, values, onSave) {
+  const f = document.getElementById('dlgForm');
+  f.innerHTML = `<h3>${esc(title)}</h3><div class="fields">${fields.map(fd => {
+    const v = values[fd.k] ?? fd.def ?? '';
+    let input;
+    if (fd.options) {
+      const opts = typeof fd.options === 'function' ? fd.options() : fd.options;
+      input = `<select name="${fd.k}" ${fd.req ? 'required' : ''}>${opts.map(o => {
+        const [val, lab] = Array.isArray(o) ? o : [o, o];
+        return `<option value="${esc(val)}" ${String(val) === String(v) ? 'selected' : ''}>${esc(lab)}</option>`;
+      }).join('')}</select>`;
+    } else {
+      input = `<input name="${fd.k}" type="${fd.type || 'text'}" ${fd.step ? `step="${fd.step}"` : ''} ${fd.min !== undefined ? `min="${fd.min}"` : ''} value="${esc(v)}" ${fd.req ? 'required' : ''}>`;
+    }
+    return `<label class="${fd.full ? 'full' : ''}">${esc(fd.l)}${input}</label>`;
+  }).join('')}</div>
+  <div class="actions"><button value="cancel" formnovalidate>Abbrechen</button><button value="ok" class="primary">Speichern</button></div>`;
+  const dlg = document.getElementById('dlg');
+  f.onsubmit = (e) => {
+    if (e.submitter && e.submitter.value === 'cancel') return;
+    const data = {};
+    fields.forEach(fd => {
+      let v = f.elements[fd.k].value;
+      if (fd.type === 'number') v = parseFloat(v) || 0;
+      data[fd.k] = v;
+    });
+    const err = onSave(data);
+    if (err) { e.preventDefault(); toast(err); return; }
+    save(); render();
+  };
+  dlg.showModal();
+}
+
+/* ================================================================
+   Stammdaten-Definitionen (generische CRUD-Listen)
+   ================================================================ */
+const garnOpts = () => db.garne.map(g => [g.id, `${g.id} – ${g.name} (${g.farbe})`]);
+const ENT = {
+  kunden: {
+    title: 'Kunden', prefix: 'KD', label: 'Kunde',
+    fields: [
+      { k: 'name', l: 'Name', req: true, full: true }, { k: 'ort', l: 'Ort' }, { k: 'email', l: 'E-Mail', type: 'email' },
+      { k: 'zahlziel', l: 'Zahlungsziel (Tage)', type: 'number', def: 30, min: 0 },
+    ],
+    cols: [['id', 'Nr.'], ['name', 'Name'], ['ort', 'Ort'], ['email', 'E-Mail'], ['zahlziel', 'Zahlziel', 'num']],
+    inUse: id => db.auftraege.some(a => a.kunde === id),
+  },
+  garne: {
+    title: 'Garne', prefix: 'GA', label: 'Garn',
+    fields: [
+      { k: 'name', l: 'Bezeichnung', req: true, full: true }, { k: 'material', l: 'Material' }, { k: 'nm', l: 'Garnfeinheit (Nm)', type: 'number', min: 0 },
+      { k: 'farbe', l: 'Farbe' }, { k: 'preis', l: 'Preis (€/kg)', type: 'number', step: '0.01', min: 0 },
+      { k: 'bestand', l: 'Bestand (kg)', type: 'number', step: '0.1', min: 0 }, { k: 'min', l: 'Mindestbestand (kg)', type: 'number', min: 0 },
+    ],
+    cols: [['id', 'Nr.'], ['name', 'Bezeichnung'], ['material', 'Material'], ['nm', 'Nm', 'num'], ['farbe', 'Farbe'],
+      ['bestand', 'Bestand kg', 'num', g => `${fmt(g.bestand, 1)} ${g.bestand < g.min ? badge('unter Min.').replace('badge ', 'badge b-bad ') : ''}`],
+      ['min', 'Min. kg', 'num'], ['preis', '€/kg', 'num', g => fmt(g.preis, 2)]],
+    inUse: id => db.artikel.some(a => a.kettGarn === id || a.schussGarn === id),
+  },
+  artikel: {
+    title: 'Stoffartikel', prefix: 'AR', label: 'Artikel',
+    fields: [
+      { k: 'name', l: 'Bezeichnung', req: true, full: true },
+      { k: 'bindung', l: 'Bindung', options: ['Leinwand', 'Köper 2/1', 'Köper 2/2', 'Köper 3/1', 'Atlas 5-bindig', 'Atlas 8-bindig', 'Jacquard'] },
+      { k: 'breite', l: 'Warenbreite (cm)', type: 'number', min: 1 },
+      { k: 'schussDichte', l: 'Schussdichte (Fd/cm)', type: 'number', min: 1, req: true },
+      { k: 'preis', l: 'VK-Preis (€/m)', type: 'number', step: '0.01', min: 0 },
+      { k: 'kettGarn', l: 'Kettgarn', options: garnOpts, req: true }, { k: 'kettBedarf', l: 'Kettgarn (kg/m)', type: 'number', step: '0.001', min: 0 },
+      { k: 'schussGarn', l: 'Schussgarn', options: garnOpts, req: true }, { k: 'schussBedarf', l: 'Schussgarn (kg/m)', type: 'number', step: '0.001', min: 0 },
+      { k: 'lager', l: 'Fertigwarenbestand (m)', type: 'number', min: 0 },
+    ],
+    cols: [['id', 'Nr.'], ['name', 'Bezeichnung'], ['bindung', 'Bindung'], ['breite', 'Breite cm', 'num'], ['schussDichte', 'Schuss/cm', 'num'],
+      ['kettGarn', 'Kette', '', a => esc(byId('garne', a.kettGarn)?.name || a.kettGarn)],
+      ['schussGarn', 'Schuss', '', a => esc(byId('garne', a.schussGarn)?.name || a.schussGarn)],
+      ['preis', '€/m', 'num', a => fmt(a.preis, 2)], ['lager', 'Lager m', 'num', a => fmt(a.lager)]],
+    inUse: id => db.auftraege.some(a => a.artikel === id),
+  },
+  maschinen: {
+    title: 'Webmaschinen', prefix: 'WM', label: 'Webmaschine',
+    fields: [
+      { k: 'name', l: 'Bezeichnung', req: true, full: true }, { k: 'typ', l: 'Eintragssystem', options: ['Greifer', 'Luftdüse', 'Wasserdüse', 'Projektil', 'Schützen'] },
+      { k: 'drehzahl', l: 'Drehzahl (U/min)', type: 'number', min: 1, req: true }, { k: 'nutzgrad', l: 'Nutzeffekt (%)', type: 'number', min: 1, def: 85 },
+      { k: 'status', l: 'Status', options: ['Bereit', 'Wartung', 'Störung'] },
+    ],
+    cols: [['id', 'Nr.'], ['name', 'Bezeichnung'], ['typ', 'System'], ['drehzahl', 'U/min', 'num'], ['nutzgrad', 'Nutzeffekt %', 'num'],
+      ['status', 'Status', '', m => badge(m.status)],
+      ['auftrag', 'Auftrag', '', m => { const a = db.auftraege.find(x => x.maschine === m.id && x.status === 'In Produktion'); return a ? esc(a.id) : '<span class="muted">–</span>'; }]],
+    inUse: id => db.auftraege.some(a => a.maschine === id && a.status === 'In Produktion'),
+    beforeSave: (d, old) => { if (old && old.status === 'Läuft' && d.status !== 'Läuft') return 'Maschine läuft – erst Auftrag abschließen.'; },
+  },
+};
+
+function viewEntity(key) {
+  const E = ENT[key];
+  const q = (state.q[key] || '').toLowerCase();
+  const rows = db[key].filter(r => !q || JSON.stringify(r).toLowerCase().includes(q));
+  return `<h2>${E.title}</h2>
+  <div class="toolbar"><button class="primary" data-act="new" data-ent="${key}">+ Neu</button>
+    <input type="search" placeholder="Suchen…" data-search="${key}" value="${esc(state.q[key] || '')}"></div>
+  <div class="tablewrap"><table><thead><tr>${E.cols.map(c => `<th class="${c[2] || ''}">${c[1]}</th>`).join('')}<th></th></tr></thead>
+  <tbody>${rows.map(r => `<tr>${E.cols.map(c => `<td class="${c[2] || ''}">${c[3] ? c[3](r) : esc(r[c[0]])}</td>`).join('')}
+    <td><button class="small" data-act="edit" data-ent="${key}" data-id="${r.id}">Bearbeiten</button>
+    <button class="small danger" data-act="del" data-ent="${key}" data-id="${r.id}">Löschen</button></td></tr>`).join('')
+    || `<tr><td colspan="${E.cols.length + 1}" class="muted">Keine Einträge</td></tr>`}</tbody></table></div>`;
+}
+
+function editEntity(key, id) {
+  const E = ENT[key];
+  const old = id ? byId(key, id) : null;
+  if (key === 'maschinen' && old && old.status === 'Läuft') { toast('Maschine läuft – Bearbeitung erst nach Auftragsabschluss.'); return; }
+  openForm(`${E.label} ${old ? old.id + ' bearbeiten' : 'anlegen'}`, E.fields, old || {}, (d) => {
+    const err = E.beforeSave && E.beforeSave(d, old); if (err) return err;
+    if (old) Object.assign(old, d); else db[key].push({ id: nextId(E.prefix), ...d });
+    toast(`${E.label} gespeichert`);
+  });
+}
+function deleteEntity(key, id) {
+  const E = ENT[key];
+  if (E.inUse(id)) { toast(`${E.label} wird noch verwendet und kann nicht gelöscht werden.`); return; }
+  if (!confirm(`${E.label} ${id} wirklich löschen?`)) return;
+  db[key] = db[key].filter(x => x.id !== id); save(); render(); toast('Gelöscht');
+}
+
+/* ================================================================
+   Verkauf: Aufträge
+   ================================================================ */
+function viewAuftraege() {
+  const filter = state.q.auftragStatus || 'Alle';
+  const list = db.auftraege.filter(a => filter === 'Alle' || a.status === filter);
+  return `<h2>Kundenaufträge</h2>
+  <div class="toolbar"><button class="primary" data-act="newOrder">+ Neuer Auftrag</button>
+    <select data-filter="auftragStatus" style="width:auto">${['Alle', 'Offen', 'In Produktion', 'Fertig', 'Geliefert', 'Fakturiert'].map(s => `<option ${s === filter ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
+  <div class="tablewrap"><table><thead><tr><th>Nr.</th><th>Datum</th><th>Kunde</th><th>Artikel</th><th class="num">Menge m</th><th class="num">Wert</th><th>Liefertermin</th><th>Garn</th><th>Status</th><th></th></tr></thead><tbody>
+  ${list.map(a => {
+    const ar = byId('artikel', a.artikel), k = byId('kunden', a.kunde);
+    const late = a.termin < today() && ['Offen', 'In Produktion'].includes(a.status);
+    const garnOk = a.status !== 'Offen' || garnVerfuegbar(garnbedarf(a.artikel, a.meter)) || (ar && ar.lager >= a.meter);
+    let btn = '';
+    if (a.status === 'Offen') btn = `<button class="small" data-act="editOrder" data-id="${a.id}">Bearbeiten</button> <button class="small danger" data-act="delOrder" data-id="${a.id}">Storno</button>`;
+    if (a.status === 'Fertig') btn = `<button class="small" data-act="deliver" data-id="${a.id}">Liefern</button>`;
+    if (a.status === 'Geliefert') btn = `<button class="small primary" data-act="invoice" data-id="${a.id}">Fakturieren</button>`;
+    return `<tr><td>${a.id}</td><td>${fdate(a.datum)}</td><td>${esc(k?.name)}</td><td>${esc(ar?.name)}</td><td class="num">${fmt(a.meter)}</td>
+      <td class="num">${eur(a.meter * (ar?.preis || 0))}</td><td>${fdate(a.termin)} ${late ? '<span class="badge b-bad">überfällig</span>' : ''}</td>
+      <td>${a.status === 'Offen' ? (garnOk ? '<span class="badge b-ok">verfügbar</span>' : '<span class="badge b-bad">Fehlmenge</span>') : '<span class="muted">–</span>'}</td>
+      <td>${badge(a.status)}</td><td>${btn}</td></tr>`;
+  }).join('') || '<tr><td colspan="10" class="muted">Keine Aufträge</td></tr>'}
+  </tbody></table></div>
+  <p class="hint">Ablauf: Offen → (Produktion) → Fertig → Geliefert → Fakturiert. Ist genügend Fertigware am Lager, kann ein offener Auftrag direkt aus dem Lager geliefert werden (Produktion → „Aus Lager bedienen“).</p>`;
+}
+
+const orderFields = () => [
+  { k: 'kunde', l: 'Kunde', options: () => db.kunden.map(k => [k.id, `${k.id} – ${k.name}`]), req: true, full: true },
+  { k: 'artikel', l: 'Artikel', options: () => db.artikel.map(a => [a.id, `${a.id} – ${a.name} (${fmt(a.preis, 2)} €/m)`]), req: true, full: true },
+  { k: 'meter', l: 'Menge (m)', type: 'number', min: 1, req: true },
+  { k: 'termin', l: 'Liefertermin', type: 'date', req: true, def: addDays(14) },
+];
+function editOrder(id) {
+  if (!db.kunden.length || !db.artikel.length) { toast('Bitte zuerst Kunden und Artikel anlegen.'); return; }
+  const old = id ? byId('auftraege', id) : null;
+  openForm(old ? `Auftrag ${old.id} bearbeiten` : 'Neuer Kundenauftrag', orderFields(), old || {}, (d) => {
+    if (d.meter <= 0) return 'Menge muss größer 0 sein.';
+    if (old) Object.assign(old, d);
+    else db.auftraege.push({ id: nextId('AU'), ...d, status: 'Offen', maschine: '', produziert: 0, datum: today() });
+    toast('Auftrag gespeichert');
+  });
+}
+
+/* ================================================================
+   Produktion
+   ================================================================ */
+function viewProduktion() {
+  const offen = db.auftraege.filter(a => a.status === 'Offen').sort((a, b) => a.termin.localeCompare(b.termin));
+  const laufend = db.auftraege.filter(a => a.status === 'In Produktion');
+  return `<h2>Produktion / Webereiplanung</h2>
+  <div class="card"><h3 style="margin-top:0">Laufende Fertigungsaufträge</h3>
+  <div class="tablewrap"><table><thead><tr><th>Auftrag</th><th>Artikel</th><th>Maschine</th><th class="num">Soll m</th><th class="num">Ist m</th><th>Fortschritt</th><th class="num">Leistung m/h</th><th class="num">Restlaufzeit</th><th></th></tr></thead><tbody>
+  ${laufend.map(a => {
+    const ar = byId('artikel', a.artikel), m = byId('maschinen', a.maschine);
+    const l = leistung(m, ar), rest = Math.max(0, a.meter - a.produziert);
+    const pct = Math.min(100, a.produziert / a.meter * 100);
+    return `<tr><td>${a.id}</td><td>${esc(ar?.name)}</td><td>${esc(m?.name)}</td><td class="num">${fmt(a.meter)}</td><td class="num">${fmt(a.produziert)}</td>
+      <td><div class="bar"><div style="width:${pct}%"></div></div></td><td class="num">${fmt(l, 1)}</td><td class="num">${l ? fmt(rest / l, 1) + ' h' : '–'}</td>
+      <td><button class="small" data-act="report" data-id="${a.id}">Rückmelden</button> <button class="small primary" data-act="finish" data-id="${a.id}">Abschließen</button></td></tr>`;
+  }).join('') || '<tr><td colspan="9" class="muted">Keine Maschine belegt</td></tr>'}
+  </tbody></table></div></div>
+
+  <div class="card"><h3 style="margin-top:0">Offene Aufträge einplanen</h3>
+  <div class="tablewrap"><table><thead><tr><th>Auftrag</th><th>Termin</th><th>Artikel</th><th class="num">Menge m</th><th>Garnbedarf</th><th class="num">Lager m</th><th></th></tr></thead><tbody>
+  ${offen.map(a => {
+    const ar = byId('artikel', a.artikel), bed = garnbedarf(a.artikel, a.meter), ok = garnVerfuegbar(bed);
+    const bedTxt = Object.entries(bed).map(([g, kg]) => { const gg = byId('garne', g); const fehlt = (gg?.bestand || 0) < kg;
+      return `<span class="${fehlt ? 'badge b-bad' : ''}">${esc(gg?.name || g)}: ${fmt(kg, 1)} kg</span>`; }).join('<br>');
+    return `<tr><td>${a.id}</td><td>${fdate(a.termin)}</td><td>${esc(ar?.name)}</td><td class="num">${fmt(a.meter)}</td><td style="white-space:normal">${bedTxt}</td>
+      <td class="num">${fmt(ar?.lager)}</td><td><button class="small primary" data-act="start" data-id="${a.id}" ${ok ? '' : 'disabled title="Garn nicht ausreichend"'}>Starten</button>
+      <button class="small" data-act="fromStock" data-id="${a.id}" ${ar && ar.lager >= a.meter ? '' : 'disabled'}>Aus Lager bedienen</button></td></tr>`;
+  }).join('') || '<tr><td colspan="7" class="muted">Keine offenen Aufträge</td></tr>'}
+  </tbody></table></div>
+  <p class="hint">Beim Start wird der komplette Garnbedarf (Kette + Schuss) vom Garnlager gebucht. Leistung = Drehzahl × 60 / (Schussdichte × 100) × Nutzeffekt.</p></div>`;
+}
+
+function startOrder(id) {
+  const a = byId('auftraege', id), ar = byId('artikel', a.artikel);
+  const freie = db.maschinen.filter(m => m.status === 'Bereit');
+  if (!freie.length) { toast('Keine Webmaschine frei.'); return; }
+  openForm(`Auftrag ${a.id} starten`, [
+    { k: 'maschine', l: 'Webmaschine', full: true, options: freie.map(m => [m.id, `${m.name} – ${fmt(leistung(m, ar), 1)} m/h ≈ ${fmt(a.meter / leistung(m, ar), 0)} h`]) },
+  ], {}, (d) => {
+    const bed = garnbedarf(a.artikel, a.meter);
+    if (!garnVerfuegbar(bed)) return 'Garnbestand nicht ausreichend.';
+    Object.entries(bed).forEach(([g, kg]) => { byId('garne', g).bestand -= kg; buchen('Garnverbrauch', a.id, -kg, 'kg', byId('garne', g).name); });
+    const m = byId('maschinen', d.maschine); m.status = 'Läuft';
+    a.maschine = m.id; a.status = 'In Produktion'; a.produziert = 0; a.start = today();
+    toast(`${a.id} läuft auf ${m.name}`);
+  });
+}
+function reportOrder(id) {
+  const a = byId('auftraege', id);
+  openForm(`Rückmeldung ${a.id}`, [{ k: 'menge', l: `Gewebte Meter (bisher ${fmt(a.produziert)} von ${fmt(a.meter)})`, type: 'number', min: 0, full: true }], {}, (d) => {
+    if (d.menge <= 0) return 'Menge muss größer 0 sein.';
+    a.produziert += d.menge; buchen('Rückmeldung', a.id, d.menge, 'm', byId('artikel', a.artikel)?.name);
+    toast(`${fmt(d.menge)} m rückgemeldet`);
+  });
+}
+function finishOrder(id) {
+  const a = byId('auftraege', id), ar = byId('artikel', a.artikel);
+  if (a.produziert < a.meter && !confirm(`Erst ${fmt(a.produziert)} von ${fmt(a.meter)} m produziert. Auftrag trotzdem mit Sollmenge abschließen?`)) return;
+  const menge = Math.max(a.produziert, a.meter);
+  a.produziert = menge; ar.lager += menge; buchen('Fertigmeldung', a.id, menge, 'm', ar.name);
+  const m = byId('maschinen', a.maschine); if (m) m.status = 'Bereit';
+  a.status = 'Fertig'; a.fertig = today(); save(); render(); toast(`${a.id} fertig – ${fmt(menge)} m ans Lager`);
+}
+function fromStock(id) {
+  const a = byId('auftraege', id), ar = byId('artikel', a.artikel);
+  if (ar.lager < a.meter) return;
+  a.status = 'Fertig'; a.produziert = a.meter; a.fertig = today();
+  save(); render(); toast(`${a.id} wird aus Lager bedient`);
+}
+function deliver(id) {
+  const a = byId('auftraege', id), ar = byId('artikel', a.artikel);
+  if (ar.lager < a.meter) { toast('Nicht genügend Fertigware am Lager.'); return; }
+  ar.lager -= a.meter; buchen('Warenausgang', a.id, -a.meter, 'm', ar.name);
+  a.status = 'Geliefert'; a.geliefert = today(); save(); render(); toast(`Lieferschein für ${a.id} gebucht`);
+}
+
+/* ================================================================
+   Lager
+   ================================================================ */
+function viewLager() {
+  const garnWert = db.garne.reduce((s, g) => s + g.bestand * g.preis, 0);
+  const fwWert = db.artikel.reduce((s, a) => s + a.lager * a.preis, 0);
+  return `<h2>Lager</h2>
+  <div class="kpis"><div class="kpi"><div class="v">${eur(garnWert)}</div><div class="l">Garnlager (EK-Wert)</div></div>
+    <div class="kpi"><div class="v">${eur(fwWert)}</div><div class="l">Fertigware (VK-Wert)</div></div>
+    <div class="kpi"><div class="v">${db.garne.filter(g => g.bestand < g.min).length}</div><div class="l">Garne unter Mindestbestand</div></div></div>
+  <div class="grid2">
+  <div class="card"><div class="toolbar" style="justify-content:space-between"><h3 style="margin:0">Garnlager</h3><button class="primary small" data-act="wareneingang">+ Wareneingang</button></div>
+  <div class="tablewrap"><table><thead><tr><th>Garn</th><th class="num">Bestand kg</th><th class="num">Min.</th><th class="num">Reserviert*</th><th>Status</th></tr></thead><tbody>
+  ${db.garne.map(g => {
+    const res = db.auftraege.filter(a => a.status === 'Offen').reduce((s, a) => s + (garnbedarf(a.artikel, a.meter)[g.id] || 0), 0);
+    const st = g.bestand < g.min ? '<span class="badge b-bad">Nachbestellen</span>' : g.bestand - res < g.min ? '<span class="badge b-warn">knapp</span>' : '<span class="badge b-ok">ok</span>';
+    return `<tr><td>${esc(g.name)} <span class="muted">${esc(g.farbe)}</span></td><td class="num">${fmt(g.bestand, 1)}</td><td class="num">${fmt(g.min)}</td><td class="num">${fmt(res, 1)}</td><td>${st}</td></tr>`;
+  }).join('')}</tbody></table></div><p class="hint">* Bedarf aus offenen, noch nicht gestarteten Aufträgen</p></div>
+  <div class="card"><h3 style="margin-top:0">Fertigwarenlager</h3>
+  <div class="tablewrap"><table><thead><tr><th>Artikel</th><th class="num">Bestand m</th><th class="num">Wert</th></tr></thead><tbody>
+  ${db.artikel.map(a => `<tr><td>${esc(a.name)}</td><td class="num">${fmt(a.lager)}</td><td class="num">${eur(a.lager * a.preis)}</td></tr>`).join('')}
+  </tbody></table></div></div></div>
+  <div class="card"><h3 style="margin-top:0">Materialbewegungen</h3>
+  <div class="tablewrap"><table><thead><tr><th>Beleg</th><th>Zeit</th><th>Vorgang</th><th>Referenz</th><th>Material</th><th class="num">Menge</th></tr></thead><tbody>
+  ${db.bewegungen.slice(0, 100).map(b => `<tr><td>${b.id}</td><td>${esc(b.datum)}</td><td>${esc(b.art)}</td><td>${esc(b.ref)}</td><td>${esc(b.text)}</td>
+    <td class="num" style="color:${b.menge < 0 ? 'var(--bad)' : 'var(--ok)'}">${b.menge > 0 ? '+' : ''}${fmt(b.menge, 1)} ${b.einheit}</td></tr>`).join('')
+    || '<tr><td colspan="6" class="muted">Noch keine Buchungen</td></tr>'}</tbody></table></div></div>`;
+}
+function wareneingang() {
+  openForm('Wareneingang Garn', [
+    { k: 'garn', l: 'Garn', options: garnOpts, full: true },
+    { k: 'menge', l: 'Menge (kg)', type: 'number', step: '0.1', min: 0, req: true },
+    { k: 'lieferant', l: 'Lieferant / Lieferschein' },
+  ], {}, (d) => {
+    if (d.menge <= 0) return 'Menge muss größer 0 sein.';
+    const g = byId('garne', d.garn); g.bestand += d.menge;
+    buchen('Wareneingang', d.lieferant || '–', d.menge, 'kg', g.name); toast(`${fmt(d.menge, 1)} kg ${g.name} eingebucht`);
+  });
+}
+
+/* ================================================================
+   Rechnungen
+   ================================================================ */
+function createInvoice(id) {
+  const a = byId('auftraege', id), ar = byId('artikel', a.artikel), k = byId('kunden', a.kunde);
+  const netto = a.meter * ar.preis;
+  const r = { id: nextId('RE'), datum: today(), auftrag: a.id, kunde: k.id, kundeName: k.name, kundeOrt: k.ort,
+    pos: [{ text: `${ar.name} (${ar.bindung}, ${ar.breite} cm)`, menge: a.meter, preis: ar.preis }],
+    netto, mwst: netto * MWST, brutto: netto * (1 + MWST), faellig: (() => { const d = new Date(); d.setDate(d.getDate() + (k.zahlziel || 0)); return d.toISOString().slice(0, 10); })(), bezahlt: false };
+  db.rechnungen.unshift(r); a.status = 'Fakturiert'; a.rechnung = r.id;
+  save(); state.invoice = r.id; go('rechnungen'); toast(`Rechnung ${r.id} erstellt`);
+}
+function viewRechnungen() {
+  if (state.invoice) {
+    const r = byId('rechnungen', state.invoice);
+    if (r) return `<div class="toolbar noprint"><button data-act="backInvoices">← Zurück</button><button class="primary" onclick="window.print()">Drucken</button></div>
+    <div class="invoice"><div style="display:flex;justify-content:space-between"><div><strong>Weberei Musterstadt GmbH</strong><br><span class="muted">Webereistraße 1 · 12345 Musterstadt</span></div><h2>Rechnung</h2></div>
+    <p style="margin-top:28px">${esc(r.kundeName)}<br>${esc(r.kundeOrt)}</p>
+    <p>Rechnungsnr.: <b>${r.id}</b><br>Datum: ${fdate(r.datum)}<br>Auftrag: ${r.auftrag}<br>Kunden-Nr.: ${r.kunde}</p>
+    <table><thead><tr><th>Pos.</th><th>Bezeichnung</th><th class="num">Menge</th><th class="num">Preis/m</th><th class="num">Betrag</th></tr></thead><tbody>
+    ${r.pos.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.text)}</td><td class="num">${fmt(p.menge)} m</td><td class="num">${eur(p.preis)}</td><td class="num">${eur(p.menge * p.preis)}</td></tr>`).join('')}
+    <tr><td colspan="4" class="num">Netto</td><td class="num">${eur(r.netto)}</td></tr>
+    <tr><td colspan="4" class="num">MwSt. ${MWST * 100} %</td><td class="num">${eur(r.mwst)}</td></tr>
+    <tr><td colspan="4" class="num"><b>Gesamtbetrag</b></td><td class="num"><b>${eur(r.brutto)}</b></td></tr></tbody></table>
+    <p style="margin-top:24px">Zahlbar bis ${fdate(r.faellig)} ohne Abzug.</p></div>`;
+  }
+  const offen = db.rechnungen.filter(r => !r.bezahlt).reduce((s, r) => s + r.brutto, 0);
+  return `<h2>Rechnungen / Debitoren</h2>
+  <div class="kpis"><div class="kpi"><div class="v">${eur(offen)}</div><div class="l">Offene Posten (brutto)</div></div>
+    <div class="kpi"><div class="v">${db.rechnungen.filter(r => !r.bezahlt && r.faellig < today()).length}</div><div class="l">Überfällige Rechnungen</div></div></div>
+  <div class="tablewrap"><table><thead><tr><th>Nr.</th><th>Datum</th><th>Kunde</th><th>Auftrag</th><th class="num">Netto</th><th class="num">Brutto</th><th>Fällig</th><th>Status</th><th></th></tr></thead><tbody>
+  ${db.rechnungen.map(r => `<tr><td>${r.id}</td><td>${fdate(r.datum)}</td><td>${esc(r.kundeName)}</td><td>${r.auftrag}</td><td class="num">${eur(r.netto)}</td><td class="num">${eur(r.brutto)}</td>
+    <td>${fdate(r.faellig)}</td><td>${r.bezahlt ? badge('Bezahlt') : r.faellig < today() ? '<span class="badge b-bad">überfällig</span>' : '<span class="badge b-warn">offen</span>'}</td>
+    <td><button class="small" data-act="showInvoice" data-id="${r.id}">Anzeigen</button> ${r.bezahlt ? '' : `<button class="small primary" data-act="pay" data-id="${r.id}">Zahlung buchen</button>`}</td></tr>`).join('')
+    || '<tr><td colspan="9" class="muted">Noch keine Rechnungen – gelieferte Aufträge unter „Aufträge“ fakturieren.</td></tr>'}
+  </tbody></table></div>`;
+}
+
+/* ================================================================
+   Dashboard
+   ================================================================ */
+function viewDashboard() {
+  const A = db.auftraege;
+  const offenWert = A.filter(a => ['Offen', 'In Produktion', 'Fertig'].includes(a.status)).reduce((s, a) => s + a.meter * (byId('artikel', a.artikel)?.preis || 0), 0);
+  const laufend = db.maschinen.filter(m => m.status === 'Läuft').length;
+  const umsatz = db.rechnungen.reduce((s, r) => s + r.netto, 0);
+  const knapp = db.garne.filter(g => g.bestand < g.min);
+  const ueber = A.filter(a => a.termin < today() && ['Offen', 'In Produktion'].includes(a.status));
+  return `<h2>Übersicht</h2>
+  <div class="kpis">
+    <div class="kpi"><div class="v">${A.filter(a => a.status === 'Offen').length}</div><div class="l">Offene Aufträge</div></div>
+    <div class="kpi"><div class="v">${eur(offenWert)}</div><div class="l">Auftragsbestand (netto)</div></div>
+    <div class="kpi"><div class="v">${laufend} / ${db.maschinen.length}</div><div class="l">Webmaschinen in Betrieb</div></div>
+    <div class="kpi"><div class="v">${eur(umsatz)}</div><div class="l">Fakturierter Umsatz (netto)</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3 style="margin-top:0">Maschinenpark</h3><table><tbody>
+    ${db.maschinen.map(m => { const a = A.find(x => x.maschine === m.id && x.status === 'In Produktion');
+      return `<tr><td>${esc(m.name)}</td><td>${badge(m.status)}</td><td>${a ? `${a.id} · <div class="bar" style="display:inline-block;width:80px;vertical-align:middle"><div style="width:${Math.min(100, a.produziert / a.meter * 100)}%"></div></div>` : ''}</td></tr>`; }).join('')}
+    </tbody></table></div>
+    <div class="card"><h3 style="margin-top:0">Handlungsbedarf</h3>
+    ${knapp.map(g => `<div>⚠️ Garn <b>${esc(g.name)}</b> unter Mindestbestand (${fmt(g.bestand, 1)} / ${fmt(g.min)} kg)</div>`).join('')}
+    ${ueber.map(a => `<div>⏰ Auftrag <b>${a.id}</b> überfällig (Termin ${fdate(a.termin)})</div>`).join('')}
+    ${A.filter(a => a.status === 'Fertig').map(a => `<div>📦 Auftrag <b>${a.id}</b> fertig – bereit zur Lieferung</div>`).join('')}
+    ${A.filter(a => a.status === 'Geliefert').map(a => `<div>🧾 Auftrag <b>${a.id}</b> geliefert – noch nicht fakturiert</div>`).join('')}
+    ${db.maschinen.filter(m => ['Wartung', 'Störung'].includes(m.status)).map(m => `<div>🔧 ${esc(m.name)}: ${esc(m.status)}</div>`).join('')}
+    </div>
+  </div>`;
+}
+
+/* ================================================================
+   Navigation & Rendering
+   ================================================================ */
+const MENU = [
+  ['Allgemein'], ['dashboard', 'Übersicht', viewDashboard],
+  ['Logistik'], ['auftraege', 'Aufträge', viewAuftraege], ['produktion', 'Produktion', viewProduktion], ['lager', 'Lager', viewLager],
+  ['Finanzen'], ['rechnungen', 'Rechnungen', viewRechnungen],
+  ['Stammdaten'], ['kunden', 'Kunden', () => viewEntity('kunden')], ['artikel', 'Stoffartikel', () => viewEntity('artikel')],
+  ['garne', 'Garne', () => viewEntity('garne')], ['maschinen', 'Webmaschinen', () => viewEntity('maschinen')],
+];
+const state = { view: 'dashboard', q: {}, invoice: null };
+try { state.view = localStorage.getItem(KEY + '-view') || 'dashboard'; } catch (e) {}
+
+function go(v) { if (v !== 'rechnungen') state.invoice = null; state.view = v; try { localStorage.setItem(KEY + '-view', v); } catch (e) {} render(); }
+function render() {
+  document.getElementById('nav').innerHTML = MENU.map(m => m.length === 1 ? `<div class="grp">${m[0]}</div>`
+    : `<a data-view="${m[0]}" class="${state.view === m[0] ? 'active' : ''}">${m[1]}</a>`).join('');
+  const item = MENU.find(m => m[0] === state.view) || MENU[1];
+  document.getElementById('main').innerHTML = item[2]();
+}
+
+const ACTIONS = {
+  new: el => editEntity(el.dataset.ent), edit: el => editEntity(el.dataset.ent, el.dataset.id), del: el => deleteEntity(el.dataset.ent, el.dataset.id),
+  newOrder: () => editOrder(), editOrder: el => editOrder(el.dataset.id),
+  delOrder: el => { if (confirm(`Auftrag ${el.dataset.id} stornieren?`)) { db.auftraege = db.auftraege.filter(a => a.id !== el.dataset.id); save(); render(); toast('Auftrag storniert'); } },
+  start: el => startOrder(el.dataset.id), report: el => reportOrder(el.dataset.id), finish: el => finishOrder(el.dataset.id),
+  fromStock: el => fromStock(el.dataset.id), deliver: el => deliver(el.dataset.id), invoice: el => createInvoice(el.dataset.id),
+  wareneingang: () => wareneingang(),
+  showInvoice: el => { state.invoice = el.dataset.id; render(); }, backInvoices: () => { state.invoice = null; render(); },
+  pay: el => { const r = byId('rechnungen', el.dataset.id); r.bezahlt = true; r.bezahltAm = today(); save(); render(); toast(`Zahlungseingang ${r.id} gebucht`); },
+};
+
+document.addEventListener('click', e => {
+  const nav = e.target.closest('[data-view]'); if (nav) { state.invoice = null; go(nav.dataset.view); return; }
+  const btn = e.target.closest('[data-act]'); if (btn && !btn.disabled) ACTIONS[btn.dataset.act]?.(btn);
+});
+document.addEventListener('input', e => {
+  const s = e.target.dataset.search; if (s === undefined) return;
+  state.q[s] = e.target.value; const pos = e.target.selectionStart; render();
+  const inp = document.querySelector(`[data-search="${s}"]`); inp.focus(); inp.setSelectionRange(pos, pos);
+});
+document.addEventListener('change', e => { const f = e.target.dataset.filter; if (f) { state.q[f] = e.target.value; render(); } });
+
+document.getElementById('btnExport').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' }));
+  a.download = `weberei-erp-${today()}.json`; a.click();
+};
+document.getElementById('btnImport').onclick = () => document.getElementById('importFile').click();
+document.getElementById('importFile').onchange = async e => {
+  const file = e.target.files[0]; if (!file) return;
+  try { const d = JSON.parse(await file.text()); if (!d.seq || !d.auftraege) throw 0; db = d; save(); render(); toast('Daten importiert'); }
+  catch (err) { toast('Ungültige Datei'); }
+  e.target.value = '';
+};
+document.getElementById('btnReset').onclick = () => { if (confirm('Alle Daten löschen und Demodaten laden?')) { db = demoData(); save(); render(); toast('Demodaten geladen'); } };
+
+load(); render();
+</script>
+</body>
+</html>
